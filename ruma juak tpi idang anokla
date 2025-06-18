@@ -1,0 +1,45 @@
+
+class HomeActivity : AppCompatActivity() {
+    private lateinit var binding : ActivityHomeBinding
+    private lateinit var rvAdapter: OrderAdapter
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        binding = ActivityHomeBinding.inflate(layoutInflater)
+
+        val layoutManager : RecyclerView.LayoutManager = LinearLayoutManager(this)
+        binding.rvData.layoutManager = layoutManager
+
+        enableEdgeToEdge()
+        setContentView(binding.root)
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        binding.btnAddOrder.setOnClickListener {
+            startActivity(Intent(this, OrderActivity::class.java))
+        }
+
+        loadOrderList()
+    }
+
+    fun loadOrderList(){
+        lifecycleScope.launch(Dispatchers.IO){
+            val datas = Connection.get_order()
+            val addData = arrayListOf<OrderModel>()
+            lifecycleScope.launch(Dispatchers.Main) {
+                if(datas != null){
+                    for(i in 0..<datas.length())
+                    {
+                        var data = datas.getJSONObject(i)
+                        addData.add(OrderModel(data.getInt("nomor"),data.getString("tanggal"),data.getInt("total_harga")))
+                    }
+                    println(addData.toString())
+                    rvAdapter = OrderAdapter(addData)
+                    binding.rvData.adapter = rvAdapter
+                }
+            }
+        }
+    }
