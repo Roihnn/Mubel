@@ -1,0 +1,83 @@
+class OrderActivity : AppCompatActivity() {
+    private lateinit var binding : ActivityOrderBinding
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityOrderBinding.inflate(layoutInflater)
+
+        enableEdgeToEdge()
+        setContentView(binding.root)
+
+        binding.tvKembali.setOnClickListener {
+            startActivity(Intent(this, HomeActivity::class.java))
+        }
+
+        binding.btnMakeOrder.setOnClickListener{
+            if (binding.ddMakanan.text.isEmpty() || binding.ddMinuman.text.isEmpty() || binding.etJumlahMakanan.text.isEmpty() || binding.etJumlahMinuman.text.isEmpty()){
+                Toast.makeText(this, "Mohon isi semua data", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }else{
+                lifecycleScope.launch(Dispatchers.IO){
+                    val id_makanan = Connection.search_makanan(binding.ddMakanan.text.toString())!!.getInt("id_makanan")
+                    val id_minuman = Connection.search_minuman(binding.ddMinuman.text.toString())!!.getInt("id_minuman")
+
+                    val jumlah_makanan:Int = binding.etJumlahMakanan.text.toString().toInt()
+                    val jumlah_minuman:Int = binding.etJumlahMinuman.text.toString().toInt()
+
+                    val make_order = Connection.make_order(id_makanan,jumlah_makanan,id_minuman,jumlah_minuman)
+
+                    if(!make_order){
+                        lifecycleScope.launch(Dispatchers.Main){
+                            Toast.makeText(this@OrderActivity, "Coba lagi nanti, pesanan belum bisa dibuat", Toast.LENGTH_SHORT).show()
+                        }
+                    }else{
+                        lifecycleScope.launch(Dispatchers.Main){
+                            Toast.makeText(this@OrderActivity, "Pesanan telah dibuat", Toast.LENGTH_SHORT).show()
+                            startActivity(Intent(this@OrderActivity, HomeActivity::class.java))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        loadMinumanList()
+        loadMakananList()
+    }
+
+    fun loadMakananList(){
+        lifecycleScope.launch(Dispatchers.IO){
+            var datas = Connection.get_makanan()
+            if(datas != null){
+                lifecycleScope.launch(Dispatchers.Main){
+                    val listMakanan : ArrayList<String> = arrayListOf()
+                    for(i in 0..<datas.length()){
+                        val data = datas.getJSONObject(i)
+                        listMakanan.add(data.getString("nama"))
+                    }
+                    val adapter = ArrayAdapter(this@OrderActivity, R.layout.makanan_item_list, listMakanan)
+                    binding.ddMakanan.setAdapter(adapter)
+                }
+            }
+        }
+    }
+
+    fun loadMinumanList(){
+        lifecycleScope.launch(Dispatchers.IO){
+            var datas = Connection.get_minuman()
+            if(datas != null){
+                lifecycleScope.launch(Dispatchers.Main){
+                    val listMinuman : ArrayList<String> = arrayListOf()
+                    for(i in 0..<datas.length()){
+                        val data = datas.getJSONObject(i)
+                        listMinuman.add(data.getString("nama"))
+                    }
+                    val adapter = ArrayAdapter(this@OrderActivity, R.layout.minuman_item_list, listMinuman)
+                    binding.ddMinuman.setAdapter(adapter)
+                }
+            }
+        }
+    }
