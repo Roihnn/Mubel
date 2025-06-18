@@ -1,0 +1,155 @@
+class Connection {
+    companion object{
+        val BASE_URL = "http://10.0.2.2:8000/warkop/api/"
+        var customer_id : Int? = null
+
+        fun login(username:String, password:String):Boolean{
+            val url = URL(BASE_URL+"users/login")
+            val conn = url.openConnection() as HttpURLConnection
+            with(conn)
+            {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type","application/json")
+
+                BufferedOutputStream(conn.outputStream).use {
+                    outputStream -> OutputStreamWriter(outputStream, "UTF-8").use { writer ->
+                        val payload : JSONObject = JSONObject()
+                        payload.put("username", username)
+                        payload.put("password", password)
+                        writer.write(payload.toString())
+                        writer.flush()
+                    }
+                }
+
+                if(responseCode == 200){
+                    val data = JSONObject(InputStreamReader(inputStream).readText()).getJSONObject("data")
+                    customer_id = data.getInt("id_customer")
+                    return true
+                }
+            }
+            return false
+        }
+
+        fun register(username:String, nama:String, alamat:String, no_hp:String, email:String, password:String):Boolean{
+            val url = URL(BASE_URL+"users")
+            val conn = url.openConnection() as HttpURLConnection
+            with(conn)
+            {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type","application/json")
+
+                BufferedOutputStream(conn.outputStream).use {
+                        outputStream -> OutputStreamWriter(outputStream, "UTF-8").use { writer ->
+                        val payload : JSONObject = JSONObject()
+                        payload.put("username", username)
+                        payload.put("nama", nama)
+                        payload.put("alamat", alamat)
+                        payload.put("no_hp", no_hp)
+                        payload.put("email", email)
+                        payload.put("password", password)
+                        writer.write(payload.toString())
+                        writer.flush()
+                    }
+                }
+
+                if(responseCode == 201){
+                    return true
+                }
+            }
+            return false
+        }
+
+        fun get_makanan():JSONArray?{
+            val url = URL(BASE_URL+"makanan")
+            with(url.openConnection() as HttpURLConnection)
+            {
+                requestMethod = "GET"
+
+                if(responseCode == 200){
+                    return JSONArray(InputStreamReader(inputStream).readText())
+                }else{
+                    return null
+                }
+            }
+        }
+
+        fun search_makanan(makanan:String):JSONObject?{
+            val url = URL(BASE_URL+"makanan?q=$makanan")
+            with(url.openConnection() as HttpURLConnection){
+                requestMethod = "GET"
+
+                if(responseCode == 200){
+                    return JSONObject(InputStreamReader(inputStream).readText())
+                }else{
+                    return null
+                }
+            }
+        }
+
+        fun get_minuman():JSONArray?{
+            val url = URL(BASE_URL+"minuman")
+            with(url.openConnection() as HttpURLConnection){
+                requestMethod = "GET"
+
+                if(responseCode == 200){
+                    return JSONArray(InputStreamReader(inputStream).readText())
+                }else{
+                    return null
+                }
+            }
+        }
+
+        fun search_minuman(minuman:String):JSONObject?{
+            val url = URL(BASE_URL+"minuman?q=$minuman")
+            with(url.openConnection() as HttpURLConnection){
+                requestMethod = "GET"
+
+                if(responseCode == 200){
+                    return JSONObject(InputStreamReader(inputStream).readText())
+                }else{
+                    return null
+                }
+            }
+        }
+
+        fun get_order():JSONArray?{
+            val url = URL(BASE_URL+"orders?q=$customer_id")
+            with(url.openConnection() as HttpURLConnection){
+                requestMethod = "GET"
+
+                if(responseCode == 200){
+                    return JSONArray(InputStreamReader(inputStream).readText())
+                }else{
+                    return null
+                }
+            }
+        }
+
+        fun make_order(id_makanan:Int, jumlah_makanan: Int, id_minuman:Int, jumlah_minuman:Int):Boolean{
+            val url = URL(BASE_URL+"orders")
+            val conn = url.openConnection() as HttpURLConnection
+            with(conn){
+
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json")
+
+                BufferedOutputStream(conn.outputStream).use {
+                        outputStream -> OutputStreamWriter(outputStream, "UTF-8").use { writer ->
+                        val payload : JSONObject = JSONObject()
+                        payload.put("id_customer", customer_id)
+                        payload.put("id_makanan", id_makanan)
+                        payload.put("id_minuman", id_minuman)
+                        payload.put("jumlah_makanan", jumlah_makanan)
+                        payload.put("jumlah_minuman", jumlah_minuman)
+                        writer.write(payload.toString())
+                        writer.flush()
+                    }
+                }
+
+                if(responseCode == 201){
+                    return true
+                }else{
+                    return false
+                }
+            }
+        }
