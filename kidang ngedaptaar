@@ -1,0 +1,43 @@
+class RegisterActivity : AppCompatActivity() {
+    private lateinit var binding : ActivityRegisterBinding
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        binding = ActivityRegisterBinding.inflate(layoutInflater)
+
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContentView(binding.root)
+
+        binding.tvRegister.setOnClickListener {
+            val login = Intent(this, MainActivity::class.java)
+            startActivity(login)
+        }
+
+        binding.btnRegister.setOnClickListener {
+            if(binding.etUsername.text.isEmpty() || binding.etPassword.text.isEmpty() || binding.etAlamat.text.isEmpty() || binding.etNama.text.isEmpty() || binding.etNoHp.text.isEmpty() ){
+                Toast.makeText(this, "Mohon isi semua data sebelum mendaftar", Toast.LENGTH_SHORT).show()
+            }else{
+                lifecycleScope.launch(Dispatchers.IO){
+                    val username = binding.etUsername.text.toString()
+                    val name = binding.etNama.text.toString()
+                    val alamat = binding.etAlamat.text.toString()
+                    val phone = binding.etNoHp.text.toString()
+                    val email = binding.etEmail.text.toString()
+                    val password = binding.etPassword.text.toString()
+
+                    val register = Connection.register(username,name,alamat, phone,email,password)
+                    if(!register){
+                        lifecycleScope.launch(Dispatchers.Main){
+                            Toast.makeText(this@RegisterActivity, "Data gagal dibuat, coba lagi nanti", Toast.LENGTH_SHORT).show()
+                        }
+                    }else{
+                        lifecycleScope.launch(Dispatchers.Main){
+                            Toast.makeText(this@RegisterActivity, "Data telah dibuat, silahkan login", Toast.LENGTH_SHORT).show()
+                            startActivity(Intent(this@RegisterActivity,MainActivity::class.java))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
