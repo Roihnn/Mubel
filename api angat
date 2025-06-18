@@ -1,0 +1,341 @@
+DB_CONNECTION=sqlsrv
+DB_HOST=127.0.0.1
+DB_PORT=1433
+DB_DATABASE=NgopiYo
+DB_USERNAME=laravel
+DB_PASSWORD=123
+
+php artisan make:model Product
+php artisan make:model User
+php artisan make:model Transaction
+php artisan make:model Customer
+
+php artisan make:controller API/AuthController
+php artisan make:controller API/ProductController
+php artisan make:controller API/TransactionController
+
+Route::post('/api/Auth/SignIn', [AuthController::class, 'signIn']);
+Route::post('/api/Auth/SignUp', [AuthController::class, 'signUp']);
+Route::get('/api/Auth/Me', [AuthController::class, 'me']);
+
+Route::get('/api/Products', [ProductController::class, 'index']);
+
+Route::post('/api/Transaction', [TransactionController::class, 'store']);
+Route::get('/api/Transaction', [TransactionController::class, 'index']);
+Route::get('/api/Transaction/{id}', [TransactionController::class, 'show']);
+
+//dak tau bende ape
+✅ 1.1 Tambahkan route di routes/api.php
+php
+Salin
+Edit
+use App\Http\Controllers\API\TransactionController;
+
+Route::post('/Transaction', [TransactionController::class, 'store']);
+Route::get('/Transaction', [TransactionController::class, 'index']);
+✅ 1.2 Buat Controller: app/Http/Controllers/API/TransactionController.php
+php
+Salin
+Edit
+namespace App\Http\Controllers\API;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Transaction;
+
+class TransactionController extends Controller
+{
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'id_customer' => 'required|integer',
+            'id_product' => 'required|integer',
+            'quantity' => 'required|integer',
+            'total_price' => 'required|integer',
+            'date' => 'required|date'
+        ]);
+
+        $transaksi = Transaction::create($data);
+
+        return response()->json([
+            'message' => 'Transaksi berhasil disimpan!',
+            'data' => $transaksi
+        ], 201);
+    }
+
+    public function index()
+    {
+        return response()->json(Transaction::with(['customer', 'product'])->get());
+    }
+}
+✅ 1.3 Buat Model: app/Models/Transaction.php
+php
+Salin
+Edit
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Transaction extends Model
+{
+    protected $table = 'Transactions';
+    protected $primaryKey = 'nomor';
+    public $timestamps = false;
+
+    protected $fillable = [
+        'id_customer', 'id_product', 'quantity', 'total_price', 'date'
+    ];
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'id_customer');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'id_product');
+    }
+}
+Catatan: Buat juga model Customer.php dan Product.php jika belum ada.
+
+🤖 Bagian 2: Kotlin Android – Kirim Pesanan ke API
+✅ Data Class
+kotlin
+Salin
+Edit
+data class OrderRequest(
+    val id_customer: Int,
+    val id_product: Int,
+    val quantity: Int,
+    val total_price: Int,
+    val date: String // Format: "2025-06-18"
+)
+✅ Retrofit Interface
+kotlin
+Salin
+Edit
+@POST("/api/Transaction")
+fun sendTransaction(@Body request: OrderRequest): Call<ResponseBody>
+✅ Kirim dari Activity
+kotlin
+Salin
+Edit
+val order = OrderRequest(
+    id_customer = 1,
+    id_product = 3,
+    quantity = 2,
+    total_price = 30000,
+    date = "2025-06-18"
+)
+
+apiService.sendTransaction(order).enqueue(object : Callback<ResponseBody> {
+    override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+        if (response.isSuccessful) {
+            Toast.makeText(this@OrderActivity, "Berhasil kirim!", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this@OrderActivity, "Gagal kirim", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+        Toast.makeText(this@OrderActivity, t.message, Toast.LENGTH_SHORT).show()
+    }
+})
+🖥️ Bagian 3: Desktop WinForms – Tampilkan di DataGridView
+✅ Koneksi & Load ke DGV
+csharp
+Salin
+Edit
+private void LoadTransaksi()
+{
+    SqlConnection conn = DbConnection.GetConnection();
+    SqlDataAdapter da = new SqlDataAdapter("SELECT nomor, id_customer, id_product, quantity, total_price, date FROM Transactions", conn);
+    DataTable dt = new DataTable();
+    da.Fill(dt);
+    dgvTransaksi.DataSource = dt;
+}
+✅ Panggil di Form_Load
+csharp
+Salin
+Edit
+private void FormTransaksi_Load(object sender, EventArgs e)
+{
+    LoadTransaksi();
+}
+
+//
+
+
+
+
+
+
+✅ 1. Struktur Proyek Android
+Tools yang kamu perlukan:
+
+Android Studio
+
+Retrofit2 (untuk HTTP request)
+
+GSON (untuk JSON parsing)
+
+🧩 2. Tambahkan Library Retrofit di build.gradle (app)
+groovy
+Salin
+Edit
+implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+Lalu tekan "Sync Now".
+
+🔧 3. Buat Retrofit API Interface
+📁 Buat file: ApiService.kt
+kotlin
+Salin
+Edit
+import retrofit2.Call
+import retrofit2.http.Body
+import retrofit2.http.POST
+
+data class OrderRequest(
+    val id_customer: Int,
+    val id_product: Int,
+    val quantity: Int,
+    val total_price: Int,
+    val date: String // format: "2025-06-18"
+)
+
+interface ApiService {
+    @POST("/api/Transaction")
+    fun sendOrder(@Body order: OrderRequest): Call<Void>
+}
+🛠️ 4. Buat Retrofit Client
+📁 Buat file: ApiClient.kt
+kotlin
+Salin
+Edit
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+
+object ApiClient {
+    private const val BASE_URL = "http://192.168.1.100:8000" // GANTI ke IP Laravel kamu
+
+    val instance: ApiService by lazy {
+        val retrofit = Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        retrofit.create(ApiService::class.java)
+    }
+}
+🖼️ 5. Layout XML (activity_main.xml)
+Contoh layout sederhana:
+
+xml
+Salin
+Edit
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:padding="20dp"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <EditText
+        android:id="@+id/edtProductId"
+        android:hint="ID Produk"
+        android:inputType="number"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <EditText
+        android:id="@+id/edtQuantity"
+        android:hint="Jumlah"
+        android:inputType="number"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <EditText
+        android:id="@+id/edtTotalPrice"
+        android:hint="Total Harga"
+        android:inputType="number"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/btnOrder"
+        android:text="Kirim Pesanan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+</LinearLayout>
+🎯 6. MainActivity.kt – Kirim ke API
+kotlin
+Salin
+Edit
+import android.os.Bundle
+import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import java.text.SimpleDateFormat
+import java.util.*
+
+class MainActivity : AppCompatActivity() {
+
+    lateinit var edtProductId: EditText
+    lateinit var edtQuantity: EditText
+    lateinit var edtTotalPrice: EditText
+    lateinit var btnOrder: Button
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        edtProductId = findViewById(R.id.edtProductId)
+        edtQuantity = findViewById(R.id.edtQuantity)
+        edtTotalPrice = findViewById(R.id.edtTotalPrice)
+        btnOrder = findViewById(R.id.btnOrder)
+
+        btnOrder.setOnClickListener {
+            val idProduct = edtProductId.text.toString().toInt()
+            val qty = edtQuantity.text.toString().toInt()
+            val price = edtTotalPrice.text.toString().toInt()
+
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            val order = OrderRequest(
+                id_customer = 1, // misalnya ID customer 1
+                id_product = idProduct,
+                quantity = qty,
+                total_price = price,
+                date = today
+            )
+
+            ApiClient.instance.sendOrder(order).enqueue(object : Callback<Void> {
+                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(this@MainActivity, "Berhasil dikirim!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this@MainActivity, "Gagal kirim", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<Void>, t: Throwable) {
+                    Toast.makeText(this@MainActivity, t.message, Toast.LENGTH_SHORT).show()
+                }
+            })
+        }
+    }
+}
+🌐 7. Laravel & Android Koneksi
+Jalankan Laravel pakai:
+
+nginx
+Salin
+Edit
+php artisan serve --host=0.0.0.0 --port=8000
+Pastikan HP & laptop satu WiFi
+
+Gunakan IP laptop, misal 192.168.1.100 untuk BASE_URL di ApiClient.kt
+
+
+
