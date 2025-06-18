@@ -1,0 +1,28 @@
+class OrderModel(
+    var nomor:Int,
+    var date: String,
+    var price: Int
+)
+
+class OrderAdapter (var listData : ArrayList<OrderModel>) : RecyclerView.Adapter<OrderAdapter.viewHolder>(){
+    inner class viewHolder(val binding: ItemListBinding):ViewHolder(binding.root)
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): viewHolder {
+        val binding = ItemListBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return viewHolder(binding)
+    }
+
+    override fun getItemCount(): Int {
+        return listData.size
+    }
+
+    @SuppressLint("SetTextI18n")
+    override fun onBindViewHolder(holder: viewHolder, position: Int) {
+        with(holder){
+            with(listData.get(position)){
+                binding.tvNomor.text = "No.$nomor"
+                binding.tvDate.text = date
+                binding.tvPrice.text = "Rp. $price"
+            }
+        }
+    }
